@@ -1,14 +1,17 @@
 import {Component, OnInit} from '@angular/core';
+import {HERO_LIST_IMPORTS} from '@app/heroes/feature/hero-list/hero-list.imports';
 
-import {Hero} from '../hero';
-import {HeroService} from '../hero.service';
+import {HeroService} from '../../data-access/hero.service';
+import {Hero} from '../../data-access/model/hero';
 
 @Component({
-    selector: 'app-heroes',
-    templateUrl: './heroes.component.html',
-    styleUrls: ['./heroes.component.css'],
+    standalone: true,
+    selector: 'app-hero-list',
+    templateUrl: './hero-list.component.html',
+    styleUrls: ['./hero-list.component.css'],
+    imports: HERO_LIST_IMPORTS,
 })
-export class HeroesComponent implements OnInit {
+export class HeroListComponent implements OnInit {
     heroes: Hero[] = [];
 
     constructor(private readonly heroService: HeroService) {}

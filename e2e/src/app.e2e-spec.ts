@@ -51,9 +51,11 @@ describe('Tutorial part 6', () => {
             topHeroes: element.all(by.css('app-root app-dashboard > div a')),
 
             appHeroesHref: navElts.get(1),
-            appHeroes: element(by.css('app-root app-heroes')),
-            allHeroes: element.all(by.css('app-root app-heroes li')),
-            selectedHeroSubview: element(by.css('app-root app-heroes > div:last-child')),
+            appHeroes: element(by.css('app-root app-hero-list')),
+            allHeroes: element.all(by.css('app-root app-hero-list li')),
+            selectedHeroSubview: element(
+                by.css('app-root app-hero-list > div:last-child'),
+            ),
 
             heroDetail: element(by.css('app-root app-hero-detail > div')),
 
@@ -86,7 +88,7 @@ describe('Tutorial part 6', () => {
     describe('Dashboard tests', () => {
         beforeAll(() => browser.get(''));
 
-        it('has top heroes', async () => {
+        it('has top hero-list', async () => {
             const page = getPageElts();
             expect(await page.topHeroes.count()).toEqual(4);
         });
@@ -129,7 +131,7 @@ describe('Tutorial part 6', () => {
             await getPageElts().appHeroesHref.click();
             const page = getPageElts();
             expect(await page.appHeroes.isPresent()).toBeTruthy();
-            expect(await page.allHeroes.count()).toEqual(9, 'number of heroes');
+            expect(await page.allHeroes.count()).toEqual(9, 'number of hero-list');
         });
 
         it('can route to hero details', async () => {
@@ -161,7 +163,7 @@ describe('Tutorial part 6', () => {
 
             const page = getPageElts();
             expect(await page.appHeroes.isPresent()).toBeTruthy();
-            expect(await page.allHeroes.count()).toEqual(8, 'number of heroes');
+            expect(await page.allHeroes.count()).toEqual(8, 'number of hero-list');
             const heroesAfter = await toHeroArray(page.allHeroes);
             // console.log(await Hero.fromLi(page.allHeroes[0]));
             const expectedHeroes = heroesBefore.filter(h => h.name !== newHeroName);
@@ -179,11 +181,11 @@ describe('Tutorial part 6', () => {
 
             const page = getPageElts();
             const heroesAfter = await toHeroArray(page.allHeroes);
-            expect(heroesAfter.length).toEqual(numHeroes + 1, 'number of heroes');
+            expect(heroesAfter.length).toEqual(numHeroes + 1, 'number of hero-list');
 
             expect(heroesAfter.slice(0, numHeroes)).toEqual(
                 heroesBefore,
-                'Old heroes are still there',
+                'Old hero-list are still there',
             );
 
             const maxId = heroesBefore[heroesBefore.length - 1].id;
@@ -201,7 +203,7 @@ describe('Tutorial part 6', () => {
                 expect(await button.getCssValue('border')).toContain('none');
                 expect(await button.getCssValue('padding')).toBe('1px 10px 3px');
                 expect(await button.getCssValue('border-radius')).toBe('4px');
-                // Styles defined in heroes.component.css
+                // Styles defined in hero-list.component.css
                 expect(await button.getCssValue('left')).toBe('210px');
                 expect(await button.getCssValue('top')).toBe('5px');
             }

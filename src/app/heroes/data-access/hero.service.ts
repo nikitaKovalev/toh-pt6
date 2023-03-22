@@ -4,8 +4,8 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable, of} from 'rxjs';
 import {catchError, map, tap} from 'rxjs/operators';
 
-import {Hero} from './hero';
-import {MessageService} from './message.service';
+import {Hero} from './model/hero';
+import {MessageService} from '@app/messages/data-access/message.service';
 
 @Injectable({providedIn: 'root'})
 export class HeroService {
@@ -17,10 +17,10 @@ export class HeroService {
 
     constructor(private http: HttpClient, private messageService: MessageService) {}
 
-    /** GET heroes from the server */
+    /** GET hero-list from the server */
     getHeroes(): Observable<Hero[]> {
         return this.http.get<Hero[]>(this.heroesUrl).pipe(
-            tap(_ => this.log('fetched heroes')),
+            tap(_ => this.log('fetched hero-list')),
             catchError(this.handleError<Hero[]>('getHeroes', [])),
         );
     }
@@ -47,7 +47,7 @@ export class HeroService {
         );
     }
 
-    /* GET heroes whose name contains search term */
+    /* GET hero-list whose name contains search term */
     searchHeroes(term: string): Observable<Hero[]> {
         return this.http.get<Hero[]>(`${this.heroesUrl}/?name=${term}`).pipe(
             tap(x =>

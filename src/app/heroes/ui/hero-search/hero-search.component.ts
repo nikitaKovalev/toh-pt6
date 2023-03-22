@@ -1,7 +1,8 @@
 import {ChangeDetectionStrategy, Component} from '@angular/core';
-import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
+import {ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR} from '@angular/forms';
 
 @Component({
+    standalone: true,
     selector: 'app-hero-search',
     templateUrl: './hero-search.component.html',
     styleUrls: ['./hero-search.component.css'],
@@ -9,6 +10,7 @@ import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
         {provide: NG_VALUE_ACCESSOR, useExisting: HeroSearchComponent, multi: true},
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [FormsModule],
 })
 export class HeroSearchComponent implements ControlValueAccessor {
     value = '';

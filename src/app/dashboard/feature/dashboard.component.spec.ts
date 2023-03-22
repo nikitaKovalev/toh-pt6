@@ -2,9 +2,9 @@ import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
 import {RouterTestingModule} from '@angular/router/testing';
 import {of} from 'rxjs';
 
-import {HeroSearchComponent} from '../hero-search/hero-search.component';
-import {HeroService} from '../hero.service';
-import {HEROES} from '../mock-heroes';
+import {HeroSearchComponent} from '../../heroes/ui/hero-search/hero-search.component';
+import {HeroService} from '../../heroes/data-access/hero.service';
+import {HEROES} from '../../heroes/data-access/model/mock-heroes';
 
 import {DashboardComponent} from './dashboard.component';
 

@@ -4,7 +4,7 @@
 <div class="heroes-menu">
     <a
         *ngFor="let hero of heroes$ | async | filter: filterValue:control.value; trackBy: trackBy"
-        routerLink="/detail/{{ hero.id }}"
+        routerLink="/heroes/{{ hero.id }}"
     >
         {{ hero.name }}
     </a>

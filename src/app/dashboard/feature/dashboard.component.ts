@@ -1,16 +1,18 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {FormControl} from '@angular/forms';
+import {DASHBOARD_IMPORTS} from '@app/dashboard/feature/dashboard.imports';
+import {HeroService} from '@app/heroes/data-access/hero.service';
+import {Hero} from '@app/heroes/data-access/model/hero';
+import {smartSearch} from '@shared/observables';
 import {startWith} from 'rxjs';
 
-import {Hero} from '../hero';
-import {HeroService} from '../hero.service';
-import {smartSearch} from '../observables/smart-search';
-
 @Component({
+    standalone: true,
     selector: 'app-dashboard',
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: DASHBOARD_IMPORTS,
 })
 export class DashboardComponent {
     private readonly _heroesService = inject(HeroService);
