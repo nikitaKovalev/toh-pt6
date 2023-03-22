@@ -1,42 +1,43 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { Location } from '@angular/common';
+import {Location} from '@angular/common';
+import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {switchMap} from 'rxjs';
+import {filter, map, takeUntil} from 'rxjs/operators';
 
-import { Hero } from '../hero';
-import { HeroService } from '../hero.service';
+import {Hero} from '../hero';
+import {HeroService} from '../hero.service';
+import {DestroyService} from '../services/destroy.service';
 
 @Component({
-  selector: 'app-hero-detail',
-  templateUrl: './hero-detail.component.html',
-  styleUrls: [ './hero-detail.component.css' ]
+    selector: 'app-hero-detail',
+    templateUrl: './hero-detail.component.html',
+    styleUrls: ['./hero-detail.component.css'],
+    providers: [DestroyService],
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HeroDetailComponent implements OnInit {
-  hero: Hero | undefined;
+export class HeroDetailComponent {
+    readonly hero$ = this.route.paramMap.pipe(
+        map(params => params.get('id')),
+        filter(Boolean),
+        map(id => parseInt(id, 10)),
+        switchMap(id => this.heroService.getHero(id)),
+    );
 
-  constructor(
-    private route: ActivatedRoute,
-    private heroService: HeroService,
-    private location: Location
-  ) {}
+    constructor(
+        @Inject(ActivatedRoute) private readonly route: ActivatedRoute,
+        @Inject(HeroService) private readonly heroService: HeroService,
+        @Inject(Location) private readonly location: Location,
+        @Inject(DestroyService) private readonly destroy$: DestroyService,
+    ) {}
 
-  ngOnInit(): void {
-    this.getHero();
-  }
-
-  getHero(): void {
-    const id = parseInt(this.route.snapshot.paramMap.get('id')!, 10);
-    this.heroService.getHero(id)
-      .subscribe(hero => this.hero = hero);
-  }
-
-  goBack(): void {
-    this.location.back();
-  }
-
-  save(): void {
-    if (this.hero) {
-      this.heroService.updateHero(this.hero)
-        .subscribe(() => this.goBack());
+    goBack(): void {
+        this.location.back();
     }
-  }
+
+    save(hero: Hero): void {
+        this.heroService
+            .updateHero(hero)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => this.goBack());
+    }
 }

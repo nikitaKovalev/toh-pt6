@@ -1,12 +1,11 @@
+<app-hero-search [formControl]="control"></app-hero-search>
+
 <h2>Top Heroes</h2>
-
-<app-hero-search></app-hero-search>
-
 <div class="heroes-menu">
-  <a
-    *ngFor="let hero of heroes$ | async"
-    routerLink="/detail/{{hero.id}}"
-  >
-    {{hero.name}}
-  </a>
+    <a
+        *ngFor="let hero of heroes$ | async | filter: filterValue:control.value; trackBy: trackBy"
+        routerLink="/detail/{{ hero.id }}"
+    >
+        {{ hero.name }}
+    </a>
 </div>

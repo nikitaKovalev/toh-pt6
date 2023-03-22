@@ -1,40 +1,37 @@
-import { Component, OnInit } from '@angular/core';
-
-import { Observable, Subject } from 'rxjs';
-
-import {
-   debounceTime, distinctUntilChanged, switchMap
- } from 'rxjs/operators';
-
-import { Hero } from '../hero';
-import { HeroService } from '../hero.service';
+import {ChangeDetectionStrategy, Component} from '@angular/core';
+import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 
 @Component({
-  selector: 'app-hero-search',
-  templateUrl: './hero-search.component.html',
-  styleUrls: [ './hero-search.component.css' ]
+    selector: 'app-hero-search',
+    templateUrl: './hero-search.component.html',
+    styleUrls: ['./hero-search.component.css'],
+    providers: [
+        {provide: NG_VALUE_ACCESSOR, useExisting: HeroSearchComponent, multi: true},
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HeroSearchComponent implements OnInit {
-  heroes$!: Observable<Hero[]>;
-  private searchTerms = new Subject<string>();
+export class HeroSearchComponent implements ControlValueAccessor {
+    value = '';
 
-  constructor(private heroService: HeroService) {}
+    registerOnChange(onChange: (value: string) => void): void {
+        this._onChange = onChange;
+    }
 
-  // Push a search term into the observable stream.
-  search(term: string): void {
-    this.searchTerms.next(term);
-  }
+    registerOnTouched(onTouched: () => void): void {
+        this._onTouched = onTouched;
+    }
 
-  ngOnInit(): void {
-    this.heroes$ = this.searchTerms.pipe(
-      // wait 300ms after each keystroke before considering the term
-      debounceTime(300),
+    writeValue(value: string): void {
+        this.value = value;
+        this._onChange(value);
+    }
 
-      // ignore new term if same as previous term
-      distinctUntilChanged(),
+    onValueChange(value: string): void {
+        this.value = value;
+        this._onChange(value);
+        this._onTouched();
+    }
 
-      // switch to new search observable each time the term changes
-      switchMap((term: string) => this.heroService.searchHeroes(term)),
-    );
-  }
+    private _onChange: (value: string) => void = () => {};
+    private _onTouched: () => void = () => {};
 }
