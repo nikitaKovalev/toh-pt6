@@ -22,8 +22,12 @@
     </button>
     <button
         type="button"
+        [disabled]="disabledSave$ | async"
         (click)="save(hero)"
     >
         save
     </button>
+
+    <!-- Don't repeat, it's just an example -->
+    <ng-container *ngIf="saveHero$ | async"></ng-container>
 </div>
