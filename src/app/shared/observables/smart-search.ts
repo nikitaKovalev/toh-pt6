@@ -8,6 +8,12 @@ import {
     switchMap,
 } from 'rxjs';
 
+/**
+ * RxJs Operator used to reduce API requests
+ * @param getSearchFunction function to process an API call
+ * @param searchDebounceTimeMs add debounce between emits
+ * @returns OperatorFunction
+ **/
 export function smartSearch<T>(
     getSearchFunction: (search: string) => Observable<readonly T[]>,
     searchDebounceTimeMs: number = 400,

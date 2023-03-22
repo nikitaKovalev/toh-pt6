@@ -1,10 +1,9 @@
 import {Location} from '@angular/common';
 import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
 import {HERO_DETAIL_IMPORTS} from '@app/heroes/feature/hero-detail/hero-detail.imports';
 import {DestroyService} from '@shared/services';
-import {switchMap} from 'rxjs';
-import {filter, map, takeUntil} from 'rxjs/operators';
+import {itemFromRoute} from '@shared/utils';
+import {takeUntil} from 'rxjs/operators';
 
 import {HeroService} from '../../data-access/hero.service';
 import {Hero} from '../../data-access/model/hero';
@@ -19,15 +18,9 @@ import {Hero} from '../../data-access/model/hero';
     imports: HERO_DETAIL_IMPORTS,
 })
 export class HeroDetailComponent {
-    readonly hero$ = this.route.paramMap.pipe(
-        map(params => params.get('id')),
-        filter(Boolean),
-        map(id => parseInt(id, 10)),
-        switchMap(id => this.heroService.getHero(id)),
-    );
+    readonly hero$ = itemFromRoute(id => this.heroService.getHero(Number(id)));
 
     constructor(
-        @Inject(ActivatedRoute) private readonly route: ActivatedRoute,
         @Inject(HeroService) private readonly heroService: HeroService,
         @Inject(Location) private readonly location: Location,
         @Inject(DestroyService) private readonly destroy$: DestroyService,
