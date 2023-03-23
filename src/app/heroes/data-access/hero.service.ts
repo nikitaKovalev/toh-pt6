@@ -75,7 +75,7 @@ export class HeroService {
 
         return this.http.delete<Hero>(url, this.httpOptions).pipe(
             tap(_ => this.log(`deleted hero id=${id}`)),
-            catchError(this.handleError<Hero>('deleteHero')),
+            // catchError(this.handleError<Hero>('deleteHero')),
         );
     }
 
