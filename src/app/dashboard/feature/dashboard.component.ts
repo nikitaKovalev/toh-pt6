@@ -5,15 +5,8 @@ import {HeroService} from '@app/heroes/data-access/hero.service';
 import {Hero} from '@app/heroes/data-access/model/hero';
 import {smartSearch} from '@shared/observables';
 import {NgxSpinnerService} from 'ngx-spinner';
-import {
-    distinctUntilChanged,
-    finalize,
-    startWith,
-    switchMap,
-    takeWhile,
-    timer,
-} from 'rxjs';
-import {map, tap} from 'rxjs/operators';
+import {finalize, startWith, switchMap, takeWhile, timer} from 'rxjs';
+import {filter, map, tap} from 'rxjs/operators';
 
 const COUNTDOWN = 8;
 
@@ -34,21 +27,21 @@ export class DashboardComponent {
     readonly heroes$ = this.control.valueChanges.pipe(
         startWith(''),
         tap(async () => this.spinner.show()),
-        smartSearch((value: string) =>
-            this.heroesService
-                .searchHeroes(value)
-                .pipe(finalize(async () => this.spinner.hide())),
+        smartSearch(
+            (value: string) =>
+                this.heroesService
+                    .searchHeroes(value)
+                    .pipe(finalize(async () => this.spinner.hide())),
+            async () => this.spinner.hide(),
         ),
     );
 
-    readonly heroesBlurred$ = this.control.valueChanges.pipe(
-        tap(async () => this.spinner.show()),
-        distinctUntilChanged(),
+    readonly heroesBlurred$ = this.spinner.spinnerObservable.pipe(
+        filter(spinner => spinner && spinner.show),
         switchMap(() =>
             timer(0, 100).pipe(
                 map(count => COUNTDOWN - count),
                 takeWhile(Boolean, true),
-                finalize(async () => this.spinner.hide()),
             ),
         ),
         map(counter => ({filter: `blur(${counter}px)`})),
