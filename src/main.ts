@@ -6,12 +6,14 @@ import {ROUTES} from './app/app-shell-routing';
 import {HttpClientInMemoryWebApiModule} from 'angular-in-memory-web-api';
 import {InMemoryDataService} from './app/in-memory-data.service';
 import {HttpClientModule} from '@angular/common/http';
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 
 bootstrapApplication(AppComponent, {
     providers: [
         importProvidersFrom([
             RouterModule.forRoot(ROUTES),
             HttpClientModule,
+            BrowserAnimationsModule,
 
             // The HttpClientInMemoryWebApiModule module intercepts HTTP requests
             // and returns simulated server responses.

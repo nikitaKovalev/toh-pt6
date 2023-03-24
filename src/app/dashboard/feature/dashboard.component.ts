@@ -4,7 +4,18 @@ import {DASHBOARD_IMPORTS} from '@app/dashboard/feature/dashboard.imports';
 import {HeroService} from '@app/heroes/data-access/hero.service';
 import {Hero} from '@app/heroes/data-access/model/hero';
 import {smartSearch} from '@shared/observables';
-import {startWith} from 'rxjs';
+import {NgxSpinnerService} from 'ngx-spinner';
+import {
+    distinctUntilChanged,
+    finalize,
+    startWith,
+    switchMap,
+    takeWhile,
+    timer,
+} from 'rxjs';
+import {map, tap} from 'rxjs/operators';
+
+const COUNTDOWN = 8;
 
 @Component({
     standalone: true,
@@ -15,17 +26,37 @@ import {startWith} from 'rxjs';
     imports: DASHBOARD_IMPORTS,
 })
 export class DashboardComponent {
-    private readonly _heroesService = inject(HeroService);
+    private readonly heroesService = inject(HeroService);
+    private readonly spinner = inject(NgxSpinnerService);
 
     readonly control = new FormControl<string>('', {nonNullable: true});
 
     readonly heroes$ = this.control.valueChanges.pipe(
         startWith(''),
-        smartSearch((value: string) => this._heroesService.searchHeroes(value)),
+        tap(async () => this.spinner.show()),
+        smartSearch((value: string) =>
+            this.heroesService
+                .searchHeroes(value)
+                .pipe(finalize(async () => this.spinner.hide())),
+        ),
     );
 
-    readonly filterValue = (hero: Hero, value: string): boolean =>
-        hero.name.startsWith(value);
+    readonly heroesBlurred$ = this.control.valueChanges.pipe(
+        tap(async () => this.spinner.show()),
+        distinctUntilChanged(),
+        switchMap(() =>
+            timer(0, 100).pipe(
+                map(count => COUNTDOWN - count),
+                takeWhile(Boolean, true),
+                finalize(async () => this.spinner.hide()),
+            ),
+        ),
+        map(counter => ({filter: `blur(${counter}px)`})),
+    );
+
+    readonly filterValue = (hero: Hero, value: string): boolean => {
+        return hero.name.toLowerCase().startsWith(value.toLowerCase());
+    };
 
     readonly trackBy = (index: number): number => index;
 }
