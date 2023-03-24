@@ -1,4 +1,6 @@
+import {inject, InjectFlags} from '@angular/core';
 import {RouteParam, routeParam} from '@shared/utils/route-param';
+import {NgxSpinnerService} from 'ngx-spinner';
 import {EMPTY, finalize, Observable, switchMap} from 'rxjs';
 import {catchError, filter, tap} from 'rxjs/operators';
 
@@ -21,12 +23,18 @@ export function itemFromRoute<T>(
     param: RouteParam = RouteParam.Id,
     hasLoader: boolean = false,
 ): Observable<T> {
+    const loader = inject(NgxSpinnerService, InjectFlags.Optional);
+
     return routeParam(param).pipe(
         filter(Boolean),
-        tap(() => hasLoader && console.info('loading')),
+        tap(async () => {
+            hasLoader && (await loader?.show());
+        }),
         switchMap((paramFromRoute: string) =>
             searchFunction(paramFromRoute).pipe(
-                finalize(() => hasLoader && console.info('loaded')),
+                finalize(async () => {
+                    hasLoader && (await loader?.hide());
+                }),
                 catchError(() => EMPTY),
             ),
         ),

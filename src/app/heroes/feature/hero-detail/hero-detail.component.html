@@ -1,3 +1,11 @@
+<ngx-spinner
+    bdColor="transparent"
+    size="medium"
+    color="#F46316"
+    type="timer"
+    [fullScreen]="true"
+></ngx-spinner>
+
 <div *ngIf="hero$ | async as hero">
     <h2>{{ hero.name | uppercase }} Details</h2>
     <div>

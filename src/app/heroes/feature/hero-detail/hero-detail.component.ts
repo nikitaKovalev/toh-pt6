@@ -1,7 +1,8 @@
 import {Location} from '@angular/common';
 import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
 import {HERO_DETAIL_IMPORTS} from '@app/heroes/feature/hero-detail/hero-detail.imports';
-import {itemFromRoute} from '@shared/utils';
+import {itemFromRoute, RouteParam} from '@shared/utils';
+import {NgxSpinnerService} from 'ngx-spinner';
 import {of, Subject, switchMap} from 'rxjs';
 import {catchError, mapTo, repeat, share, tap} from 'rxjs/operators';
 
@@ -17,13 +18,25 @@ import {Hero} from '../../data-access/model/hero';
     imports: HERO_DETAIL_IMPORTS,
 })
 export class HeroDetailComponent {
-    readonly hero$ = itemFromRoute(id => this.heroService.getHero(Number(id)));
+    readonly hero$ = itemFromRoute(
+        id => this.heroService.getHero(Number(id)),
+        RouteParam.Id,
+        true,
+    );
 
     readonly save$ = new Subject<Hero>();
     readonly saveHero$ = this.save$.pipe(
+        tap(async () => {
+            await this.spinner.show();
+        }),
         switchMap((hero: Hero) =>
             this.heroService.updateHero(hero).pipe(tap(() => this.goBack())),
         ),
+        tap({
+            error: async () => {
+                await this.spinner.hide();
+            },
+        }),
         share(),
     );
 
@@ -36,6 +49,7 @@ export class HeroDetailComponent {
     constructor(
         @Inject(HeroService) private readonly heroService: HeroService,
         @Inject(Location) private readonly location: Location,
+        @Inject(NgxSpinnerService) private readonly spinner: NgxSpinnerService,
     ) {}
 
     goBack(): void {
