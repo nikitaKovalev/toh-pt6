@@ -28,6 +28,7 @@ module.exports = {
     parser: '@typescript-eslint/parser',
     ignorePatterns: [
         'e2e',
+        'schematics/**',
         '**/*spec.ts',
         '**/postinstall.ts',
         'src/**/main.ts',
