@@ -1,20 +1,12 @@
-import {Type} from '@angular/core';
 import {Routes} from '@angular/router';
 
-import {HeroDetailComponent} from '../hero-detail/hero-detail.component';
-import {HeroListComponent} from '../hero-list/hero-list.component';
-
-export const ROUTES: Routes = [
+export default [
     {
         path: '',
-        loadComponent: async (): Promise<Type<HeroListComponent>> =>
-            import('../hero-list/hero-list.component').then(c => c.HeroListComponent),
+        loadComponent: async () => import('../hero-list/hero-list.component'),
     },
     {
         path: ':id',
-        loadComponent: async (): Promise<Type<HeroDetailComponent>> =>
-            import('../hero-detail/hero-detail.component').then(
-                c => c.HeroDetailComponent,
-            ),
+        loadComponent: async () => import('../hero-detail/hero-detail.component'),
     },
-];
+] as Routes;

@@ -12,13 +12,12 @@ const COUNTDOWN = 8;
 
 @Component({
     standalone: true,
-    selector: 'app-dashboard',
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: DASHBOARD_IMPORTS,
 })
-export class DashboardComponent {
+export default class DashboardComponent {
     private readonly heroesService = inject(HeroService);
     private readonly spinner = inject(NgxSpinnerService);
 

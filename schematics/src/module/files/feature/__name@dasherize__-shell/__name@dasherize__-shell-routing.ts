@@ -1,5 +1,5 @@
 import {Routes} from '@angular/router';
 
-export const ROUTES: Routes = [
+export default [
     // describe routes here
-];
+] as Routes;

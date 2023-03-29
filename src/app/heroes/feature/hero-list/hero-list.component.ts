@@ -9,13 +9,12 @@ import {Hero} from '../../data-access/model/hero';
 
 @Component({
     standalone: true,
-    selector: 'app-hero-list',
     templateUrl: './hero-list.component.html',
     styleUrls: ['./hero-list.component.css'],
     providers: [DestroyService],
     imports: HERO_LIST_IMPORTS,
 })
-export class HeroListComponent {
+export default class HeroListComponent {
     private readonly heroesRefresh$ = new Subject<void>();
     private readonly heroesStore$ = new BehaviorSubject<Hero[]>([]);
 

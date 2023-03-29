@@ -11,13 +11,12 @@ import {Hero} from '../../data-access/model/hero';
 
 @Component({
     standalone: true,
-    selector: 'app-hero-detail',
     templateUrl: './hero-detail.component.html',
     styleUrls: ['./hero-detail.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: HERO_DETAIL_IMPORTS,
 })
-export class HeroDetailComponent {
+export default class HeroDetailComponent {
     readonly hero$ = itemFromRoute(
         id => this.heroService.getHero(Number(id)),
         RouteParam.Id,
