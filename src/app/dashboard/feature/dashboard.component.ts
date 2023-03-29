@@ -1,11 +1,18 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {FormControl} from '@angular/forms';
 import {DASHBOARD_IMPORTS} from '@app/dashboard/feature/dashboard.imports';
-import {HeroService} from '@app/heroes/data-access/hero.service';
 import {Hero} from '@app/heroes/data-access/model/hero';
-import {smartSearch} from '@shared/observables';
+import {injectHeroesFeature} from '@app/store/hero.state';
 import {NgxSpinnerService} from 'ngx-spinner';
-import {finalize, startWith, switchMap, takeWhile, timer} from 'rxjs';
+import {
+    debounceTime,
+    distinctUntilChanged,
+    scan,
+    startWith,
+    switchMap,
+    takeWhile,
+    timer,
+} from 'rxjs';
 import {filter, map, tap} from 'rxjs/operators';
 
 const COUNTDOWN = 8;
@@ -18,21 +25,33 @@ const COUNTDOWN = 8;
     imports: DASHBOARD_IMPORTS,
 })
 export default class DashboardComponent {
-    private readonly heroesService = inject(HeroService);
     private readonly spinner = inject(NgxSpinnerService);
+    private readonly vm = injectHeroesFeature();
 
     readonly control = new FormControl<string>('', {nonNullable: true});
 
     readonly heroes$ = this.control.valueChanges.pipe(
         startWith(''),
         tap(async () => this.spinner.show()),
-        smartSearch(
-            (value: string) =>
-                this.heroesService
-                    .searchHeroes(value)
-                    .pipe(finalize(async () => this.spinner.hide())),
-            async () => this.spinner.hide(),
-        ),
+        debounceTime(400),
+        scan((previousSearched, current) => {
+            return previousSearched !== '' && current.startsWith(previousSearched)
+                ? previousSearched
+                : current;
+        }, ''),
+        distinctUntilChanged((previousSearched, current) => {
+            const notChanged = previousSearched === current;
+
+            if (notChanged) {
+                void this.spinner.hide();
+            }
+
+            return notChanged;
+        }),
+        tap(term => this.vm.searchHeroes(term)),
+        switchMap(() => this.vm.heroesSearchable$),
+        tap(async () => this.spinner.hide()),
+        startWith([]),
     );
 
     readonly heroesBlurred$ = this.spinner.spinnerObservable.pipe(

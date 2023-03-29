@@ -35,7 +35,7 @@ export function smartSearch<T>(
                     searchValueNotChangedCallback();
                 }
 
-                return previousSearched === current;
+                return notChanged;
             }),
             switchMap(value => getSearchFunction(value)),
             startWith([]),

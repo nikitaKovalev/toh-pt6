@@ -13,19 +13,13 @@ import {
     provideState,
     Store,
 } from '@ngrx/store';
-import {
-    concatMap,
-    exhaustMap,
-    mergeMap,
-    Observable,
-    of,
-    shareReplay,
-    switchMap,
-} from 'rxjs';
-import {catchError, filter, map} from 'rxjs/operators';
+import {concatMap, exhaustMap, mergeMap, Observable, of, switchMap} from 'rxjs';
+import {catchError, map} from 'rxjs/operators';
 
 export interface HeroState {
     collection: Hero[];
+    collectionSearchable: Hero[];
+    isLoading: boolean;
     currentHeroId: number | null;
     instantiated: boolean;
 }
@@ -33,6 +27,8 @@ export interface HeroState {
 // Initial State
 export const initialState: HeroState = {
     collection: [],
+    collectionSearchable: [],
+    isLoading: false,
     currentHeroId: null,
     instantiated: false,
 };
@@ -41,8 +37,12 @@ export interface HeroesFeature {
     enter: () => void;
     addHero: (hero: Hero) => void;
     deleteHero: (id: number) => void;
+    searchHeroes: (term: string) => void;
     heroes$: Observable<Hero[]>;
+    heroesSearchable$: Observable<Hero[]>;
     currentHero$: Observable<Hero | undefined>;
+    isLoading$: Observable<boolean>;
+    instantiated$: Observable<boolean>;
 }
 
 // Sync Actions
@@ -60,6 +60,9 @@ export const HeroesApiActions = createActionGroup({
     events: {
         'Heroes Loaded Success': props<{heroes: Hero[]}>(),
         'Heroes Loaded Failure': props<{error: string}>(),
+        'Heroes Search': props<{term: string}>(),
+        'Heroes Search Success': props<{heroes: Hero[]}>(),
+        'Heroes Search Failure': props<{error: string}>(),
         'Hero Added': props<{hero: Hero}>(),
         'Hero Added Success': props<{hero: Hero}>(),
         'Hero Added Failure': props<{error: string}>(),
@@ -74,20 +77,43 @@ export const heroesFeature = createFeature({
     name: 'heroes',
     reducer: createReducer(
         initialState,
-        on(HeroesActions.enter, () => initialState),
+        // Initial state
+        on(HeroesActions.enter, state => ({
+            ...state,
+            isLoading: true,
+        })),
+        // On successful add hero request
         on(HeroesApiActions.heroAddedSuccess, (state, {hero}) => ({
             ...state,
             collection: [...state.collection, hero],
+            collectionSearchable: [...state.collectionSearchable, hero],
         })),
-        on(HeroesApiActions.heroDeletedSuccess, (state, {hero}) => ({
-            ...state,
-            collection: state.collection.filter(({id}) => id !== hero.id),
-        })),
+        // On successful delete hero request
+        on(HeroesApiActions.heroDeletedSuccess, (state, {hero}) => {
+            const collection = state.collection.filter(h => h.id !== hero.id);
+
+            return {...state, collection, collectionSearchable: collection};
+        }),
+        // On successful load hero list
         on(HeroesApiActions.heroesLoadedSuccess, (state, {heroes}) => ({
             ...state,
             collection: heroes,
+            collectionSearchable: heroes,
             instantiated: true,
+            isLoading: false,
         })),
+        // On failure load hero list
+        on(HeroesApiActions.heroesLoadedFailure, state => ({...state, isLoading: false})),
+        // On hero search triggered
+        on(HeroesApiActions.heroesSearch, state => ({...state, isLoading: true})),
+        // On successful hero search
+        on(HeroesApiActions.heroesSearchSuccess, (state, {heroes}) => ({
+            ...state,
+            collectionSearchable: heroes,
+            isLoading: false,
+        })),
+        // On failed hero search
+        on(HeroesApiActions.heroesSearchFailure, state => ({...state, isLoading: false})),
     ),
     extraSelectors: ({selectCollection, selectCurrentHeroId}) => ({
         selectCurrentHero: createSelector(
@@ -105,6 +131,8 @@ export const {
     selectCurrentHero,
     selectCurrentHeroId,
     selectCollection: selectAllHeroes,
+    selectCollectionSearchable: selectAllHeroesSearchable,
+    selectIsLoading,
 } = heroesFeature;
 
 // Effects
@@ -180,34 +208,49 @@ export const deleteHero$ = createEffect(
     {functional: true},
 );
 
+export const searchHeroes$ = createEffect(
+    (actions$ = inject(Actions)) => {
+        const heroService = inject(HeroService);
+
+        return actions$.pipe(
+            ofType(HeroesApiActions.heroesSearch),
+            switchMap(({term}) =>
+                heroService.searchHeroes(term).pipe(
+                    map(heroes => HeroesApiActions.heroesSearchSuccess({heroes})),
+                    catchError(() =>
+                        of(
+                            HeroesApiActions.heroesSearchFailure({
+                                error: 'Heroes search failed',
+                            }),
+                        ),
+                    ),
+                ),
+            ),
+        );
+    },
+    {functional: true},
+);
+
 // Environment Providers, to register HeroesState in the store
 export const provideHeroesFeature = (): EnvironmentProviders =>
     makeEnvironmentProviders([
         provideState(heroesFeature),
-        provideEffects({loadHeroes$, addHero$, deleteHero$}),
+        provideEffects({loadHeroes$, addHero$, deleteHero$, searchHeroes$}),
     ]);
 
 export const injectHeroesFeature = (): HeroesFeature => {
     const store = inject(Store);
-    const instantiated$ = store.select(selectInstantiated).pipe(
-        map(instantiated => {
-            if (!instantiated) {
-                store.dispatch(HeroesActions.enter());
-            }
-
-            return instantiated;
-        }),
-        filter(Boolean),
-        shareReplay({bufferSize: 1, refCount: true}),
-    );
 
     return {
         enter: () => store.dispatch(HeroesActions.enter()),
         addHero: (hero: Hero) => store.dispatch(HeroesApiActions.heroAdded({hero})),
         deleteHero: (id: number) => store.dispatch(HeroesApiActions.heroDeleted({id})),
-        heroes$: instantiated$.pipe(switchMap(() => store.select(selectAllHeroes))),
-        currentHero$: instantiated$.pipe(
-            switchMap(() => store.select(selectCurrentHero)),
-        ),
+        searchHeroes: (term: string) =>
+            store.dispatch(HeroesApiActions.heroesSearch({term})),
+        heroes$: store.select(selectAllHeroes),
+        heroesSearchable$: store.select(selectAllHeroesSearchable),
+        currentHero$: store.select(selectCurrentHero),
+        isLoading$: store.select(selectIsLoading),
+        instantiated$: store.select(selectInstantiated),
     };
 };

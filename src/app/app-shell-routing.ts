@@ -1,7 +1,6 @@
 import {Routes} from '@angular/router';
 
 export const ROUTES: Routes = [
-    {path: '', redirectTo: '/dashboard', pathMatch: 'full'},
     {
         path: 'dashboard',
         loadComponent: async () => import('./dashboard/feature/dashboard.component'),
@@ -11,4 +10,6 @@ export const ROUTES: Routes = [
         loadChildren: async () =>
             import('./heroes/feature/hero-shell/hero-shell-routing'),
     },
+    {path: '', redirectTo: '/dashboard', pathMatch: 'full'},
+    {path: '**', redirectTo: '/dashboard'},
 ];
