@@ -11,6 +11,7 @@ import {provideStore} from '@ngrx/store';
 import {provideEffects} from '@ngrx/effects';
 import {provideStoreDevtools} from '@ngrx/store-devtools';
 import {provideRouterStore} from '@ngrx/router-store';
+import {provideHeroesFeature} from '@app/store/hero.state';
 
 bootstrapApplication(AppComponent, {
     providers: [
@@ -21,6 +22,7 @@ bootstrapApplication(AppComponent, {
         provideEffects(),
         provideStoreDevtools(),
         provideRouterStore(),
+        provideHeroesFeature(),
         importProvidersFrom([
             // The HttpClientInMemoryWebApiModule module intercepts HTTP requests
             // and returns simulated server responses.
