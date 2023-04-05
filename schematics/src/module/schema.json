@@ -8,7 +8,9 @@
             "type": "string",
             "format": "path",
             "description": "Path at which to create the module.",
-            "default": "src/app",
+            "$default": {
+                "$source": "workingDirectory"
+            },
             "x-prompt": "Where should be created the module?"
         },
         "name": {

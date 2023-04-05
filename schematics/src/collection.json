@@ -18,6 +18,12 @@
             "description": "Schematics for creating module with next structure: ui, feature -> [module-name]-shell, data-access",
             "factory": "./module/index#module",
             "schema": "./module/schema.json"
+        },
+        "state-ngrx": {
+            "description": "Schematics for creating state",
+            "factory": "./state/index#state",
+            "schema": "./state/schema.json",
+            "aliases": ["st"]
         }
     }
 }

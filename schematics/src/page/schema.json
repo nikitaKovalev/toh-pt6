@@ -8,7 +8,9 @@
             "type": "string",
             "format": "path",
             "description": "The path at which to create the component file, relative to the current workspace. Default is a folder with the same name as the component in the project root.",
-            "default": "src/app",
+            "$default": {
+                "$source": "workingDirectory"
+            },
             "x-prompt": "Where should be created the page component?"
         },
         "name": {

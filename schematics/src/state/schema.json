@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/schema",
+    "$id": "state-ngrx",
+    "title": "State",
+    "type": "object",
+    "properties": {
+        "path": {
+            "type": "string",
+            "format": "path",
+            "description": "The path at which to create the state.",
+            "$default": {
+                "$source": "workingDirectory"
+            },
+            "x-prompt": "Where should be created the state?"
+        },
+        "name": {
+            "type": "string",
+            "description": "The name of the state.",
+            "x-prompt": "What name would you like to use for the state?"
+        }
+    },
+    "required": [
+        "name",
+        "path"
+    ]
+}
