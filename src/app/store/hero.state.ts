@@ -98,7 +98,6 @@ export const heroesFeature = createFeature({
         on(HeroesApiActions.heroesLoadedSuccess, (state, {heroes}) => ({
             ...state,
             collection: heroes,
-            collectionSearchable: heroes,
             instantiated: true,
             isLoading: false,
         })),
@@ -138,74 +137,83 @@ export const {
 // Effects
 // Fetch heroes from the server when the HeroesActions.enter action is dispatched
 export const loadHeroes$ = createEffect(
-    (actions$ = inject(Actions)) =>
-        actions$.pipe(
+    (actions$ = inject(Actions)) => {
+        const heroService = inject(HeroService);
+
+        return actions$.pipe(
             ofType(HeroesActions.enter),
             exhaustMap(() =>
-                inject(HeroService)
-                    .getHeroes()
-                    .pipe(
-                        map(heroes => HeroesApiActions.heroesLoadedSuccess({heroes})),
-                        catchError(() =>
-                            of(
-                                HeroesApiActions.heroesLoadedFailure({
-                                    error: 'Heroes fetch failed',
-                                }),
-                            ),
+                heroService.getHeroes().pipe(
+                    map(heroes => HeroesApiActions.heroesLoadedSuccess({heroes})),
+                    catchError(() =>
+                        of(
+                            HeroesApiActions.heroesLoadedFailure({
+                                error: 'Heroes fetch failed',
+                            }),
                         ),
                     ),
+                ),
             ),
-        ),
+        );
+    },
     {functional: true},
 );
 
 // Make request to add hero when HeroesActions.heroAdded action is dispatched
 export const addHero$ = createEffect(
-    (actions$ = inject(Actions)) =>
-        actions$.pipe(
+    (actions$ = inject(Actions)) => {
+        const heroService = inject(HeroService);
+
+        return actions$.pipe(
             ofType(HeroesApiActions.heroAdded),
             // to safe the order of added heroes
             concatMap(action =>
-                inject(HeroService)
-                    .addHero(action.hero)
-                    .pipe(
-                        map((hero: Hero) => HeroesApiActions.heroAddedSuccess({hero})),
-                        catchError(() =>
-                            of(
-                                HeroesApiActions.heroAddedFailure({
-                                    error: 'Hero add failed',
-                                }),
-                            ),
+                heroService.addHero(action.hero).pipe(
+                    map((hero: Hero) => HeroesApiActions.heroAddedSuccess({hero})),
+                    catchError(() =>
+                        of(
+                            HeroesApiActions.heroAddedFailure({
+                                error: 'Hero add failed',
+                            }),
                         ),
                     ),
+                ),
             ),
-        ),
+        );
+    },
 
     {functional: true},
 );
 
 // Make request to delete hero when HeroesActions.heroDeleted action is dispatched
 export const deleteHero$ = createEffect(
-    (actions$ = inject(Actions)) =>
-        actions$.pipe(
+    (actions$ = inject(Actions)) => {
+        const heroService = inject(HeroService);
+
+        return actions$.pipe(
             ofType(HeroesApiActions.heroDeleted),
             // no need in order
             mergeMap(action =>
-                inject(HeroService)
-                    .deleteHero(action.id)
-                    .pipe(
-                        map(hero => HeroesApiActions.heroDeletedSuccess({hero})),
-                        catchError(() =>
-                            of(
-                                HeroesApiActions.heroDeletedFailure({
-                                    error: 'Hero delete failed',
-                                }),
-                            ),
+                heroService.deleteHero(action.id).pipe(
+                    map(() =>
+                        HeroesApiActions.heroDeletedSuccess({
+                            hero: {id: action.id} as Hero,
+                        }),
+                    ),
+                    catchError(() =>
+                        of(
+                            HeroesApiActions.heroDeletedFailure({
+                                error: 'Hero delete failed',
+                            }),
                         ),
                     ),
+                ),
             ),
-        ),
-    {functional: true},
+        );
+    },
+    {
+        functional: true,
+    },
 );
 
 export const searchHeroes$ = createEffect(

@@ -1,10 +1,9 @@
-import {Component, Inject} from '@angular/core';
+import {Component} from '@angular/core';
 import {HERO_LIST_IMPORTS} from '@app/heroes/feature/hero-list/hero-list.imports';
+import {injectHeroesFeature} from '@app/store/hero.state';
 import {DestroyService} from '@shared/services';
-import {BehaviorSubject, combineLatest, Observable, Subject, takeUntil} from 'rxjs';
-import {map, repeat, tap} from 'rxjs/operators';
+import {switchMap, tap} from 'rxjs/operators';
 
-import {HeroService} from '../../data-access/hero.service';
 import {Hero} from '../../data-access/model/hero';
 
 @Component({
@@ -15,21 +14,12 @@ import {Hero} from '../../data-access/model/hero';
     imports: HERO_LIST_IMPORTS,
 })
 export default class HeroListComponent {
-    private readonly heroesRefresh$ = new Subject<void>();
-    private readonly heroesStore$ = new BehaviorSubject<Hero[]>([]);
+    private readonly vm = injectHeroesFeature();
 
-    readonly heroes$ = combineLatest([
-        this.heroService.getHeroes().pipe(
-            tap(heroes => this.heroesStore$.next(heroes)),
-            repeat({delay: () => this.heroesRefresh$}),
-        ),
-        this.heroesStore$,
-    ]).pipe(map(([_, heroes]) => heroes));
-
-    constructor(
-        @Inject(HeroService) private readonly heroService: HeroService,
-        @Inject(DestroyService) private readonly destroy$: Observable<void>,
-    ) {}
+    readonly heroes$ = this.vm.instantiated$.pipe(
+        tap(instantiated => instantiated || this.vm.enter()),
+        switchMap(() => this.vm.heroes$),
+    );
 
     add(name: string): void {
         name = name.trim();
@@ -38,23 +28,10 @@ export default class HeroListComponent {
             return;
         }
 
-        this.heroService
-            .addHero({name} as Hero)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(() =>
-                // Here we need to refreshed list from server
-                // because when we add new hero, we don't know its id
-                this.heroesRefresh$.next(),
-            );
+        this.vm.addHero({name} as Hero);
     }
 
-    delete(hero: Hero): void {
-        this.heroService
-            .deleteHero(hero.id)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(() =>
-                // Here we can skip the refresh from server and just update the heroesStore$
-                this.heroesStore$.next(this.heroesStore$.value.filter(h => h !== hero)),
-            );
+    delete({id}: Hero): void {
+        this.vm.deleteHero(id);
     }
 }
