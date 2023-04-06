@@ -17,7 +17,9 @@ export default class HeroListComponent {
     private readonly vm = injectHeroesFeature();
 
     readonly heroes$ = this.vm.instantiated$.pipe(
+        // Check if heroes store is already instantiated, if not, load heroes
         tap(instantiated => instantiated || this.vm.enter()),
+        // switch to heroes$ to get the latest heroes from store
         switchMap(() => this.vm.heroes$),
     );
 

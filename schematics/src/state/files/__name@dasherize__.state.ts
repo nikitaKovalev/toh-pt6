@@ -10,21 +10,36 @@ import {
     props, provideState,
     Store,
 } from '@ngrx/store';
+import { exhaustMap, Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 export interface <%= classify(name) %>State {
+    collection: unknown[];
+    isLoading: boolean;
+    isInitialized: boolean;
     // describe state here
 }
 
-// Initial State
+/** Initial State */
 export const <%= camelize(name) %>InitialState: <%= classify(name) %>State = {
+    collection: [],
+    isLoading: false,
+    isInitialized: false,
     // describe initial state here
 };
 
 export interface <%= classify(name) %>Feature {
+    enter: () => void;
+    add<%= classify(name) %>: (<%= camelize(name) %>: unknown) => void;
+    delete<%= classify(name) %>: (id: number | string) => void;
+    update<%= classify(name) %>: (<%= camelize(name) %>: unknown) => void;
+    <%= camelize(name) %>s$: Observable<unknown[]>;
+    isLoading$: Observable<boolean>;
+    isInitialized$: Observable<boolean>;
     // describe feature here
 }
 
-// Sync Actions
+/** Sync Actions */
 export const <%= classify(name) %>Actions = createActionGroup({
     source: '<%= classify(name) %>',
     events: {
@@ -32,19 +47,54 @@ export const <%= classify(name) %>Actions = createActionGroup({
     },
 });
 
-// Async Actions
+/** Async Actions */
 export const <%= classify(name) %>ApiActions = createActionGroup({
     source: '<%= classify(name) %> API',
     events: {
+        enter: emptyProps(),
+        '<%= classify(name) %> Loaded Success': props<{<%= camelize(name) %>List: unknown[]}>(),
+        '<%= classify(name) %> Loaded Failure': props<{error: string}>(),
+        '<%= classify(name) %> Added': props<{<%= camelize(name) %>: unknown}>(),
+        '<%= classify(name) %> Added Success': props<{<%= camelize(name) %>: unknown}>(),
+        '<%= classify(name) %> Added Failure': props<{error: string}>(),
+        '<%= classify(name) %> Updated': props<{<%= camelize(name) %>: unknown}>(),
+        '<%= classify(name) %> Updated Success': props<{<%= camelize(name) %>: unknown}>(),
+        '<%= classify(name) %> Updated Failure': props<{error: string}>(),
+        '<%= classify(name) %> Deleted': props<{id: number | string}>(),
+        '<%= classify(name) %> Deleted Success': props<{<%= camelize(name) %>: unknown}>(),
+        '<%= classify(name) %> Deleted Failure': props<{error: string}>(),
         // describe async actions here
     },
 });
 
-// Reducers
+/** Reducers */
 export const <%= camelize(name) %>Feature = createFeature({
     name: '<%= classify(name) %>',
     reducer: createReducer(
         <%= camelize(name) %>InitialState,
+        // On enter
+        on(<%= classify(name) %>ApiActions.enter, state => ({
+            ...state,
+            collection: [],
+            isLoading: true,
+        })),
+        // On load success
+        on(<%= classify(name) %>ApiActions.<%= camelize(name) %>LoadedSuccess, (state, {<%= camelize(name) %>List}) => ({
+            ...state,
+            collection: <%= camelize(name) %>List,
+            isLoading: false,
+            isInitialized: true,
+        })),
+        // On load failure
+        on(<%= classify(name) %>ApiActions.<%= camelize(name) %>LoadedFailure, (state, {error}) => ({
+            ...state,
+            isLoading: false,
+        })),
+        // On add success
+        on(<%= classify(name) %>ApiActions.<%= camelize(name) %>AddedSuccess, (state, {<%= camelize(name) %>}) => ({
+            ...state,
+            collection: [...state.collection, <%= camelize(name) %>],
+        })),
         // describe reducers here
     ),
     extraSelectors: (state) => ({
@@ -52,24 +102,42 @@ export const <%= camelize(name) %>Feature = createFeature({
     }),
 });
 
-// Selectors
+/** Selectors */
 export const {
+    selectCollection: select<%= classify(name) %>Collection,
+    selectIsLoading,
+    selectIsInitialized,
     // describe selectors here
 } = <%= camelize(name) %>Feature;
 
-// Effects
+/** Effects */
 // Fetch list of <%= classify(name) %>s
 export const load<%= classify(name) %>$ = createEffect(
     (actions$ = inject(Actions)) => {
         return actions$.pipe(
+            ofType(<%= classify(name) %>ApiActions.enter),
+            exhaustMap(() =>
+                of([]).pipe(
+                    map(<%= camelize(name) %>List =>
+                        <%= classify(name) %>ApiActions.<%= camelize(name) %>LoadedSuccess({<%= camelize(name) %>List})
+                    ),
+                    catchError(() =>
+                            of(
+                                <%= classify(name) %>ApiActions.<%= camelize(name) %>LoadedFailure({
+                                    error: 'An error occurred while loading <%= classify(name) %>List'
+                                })
+                            ),
+                    ),
+                ),
+            ),
             // describe load effect here
         );
     },
     {functional: true},
 );
 
-// Create <%= classify(name) %>
-export const create<%= classify(name) %>$ = createEffect(
+// Add <%= classify(name) %>
+export const add<%= classify(name) %>$ = createEffect(
     (actions$ = inject(Actions)) => {
         return actions$.pipe(
             // describe create effect here
@@ -108,13 +176,13 @@ export const search<%= classify(name) %>$ = createEffect(
     {functional: true},
 );
 
-// Environment Providers, to register current state in the store
+/** Environment Providers, to register current state in the store */
 export const provide<%= classify(name) %>Feature = (): EnvironmentProviders =>
     makeEnvironmentProviders([
         provideState(<%= camelize(name) %>Feature),
         provideEffects({
             load<%= classify(name) %>$,
-            create<%= classify(name) %>$,
+            add<%= classify(name) %>$,
             update<%= classify(name) %>$,
             delete<%= classify(name) %>$,
             search<%= classify(name) %>$,
@@ -125,6 +193,13 @@ export const inject<%= classify(name) %>Feature = (): <%= classify(name) %>Featu
     const store = inject(Store);
 
     return {
+        enter: () => store.dispatch(<%= classify(name) %>ApiActions.enter()),
+        add<%= classify(name) %>: (<%= camelize(name) %>) => store.dispatch(<%= classify(name) %>ApiActions.<%= camelize(name) %>Added({<%= camelize(name) %>})),
+        delete<%= classify(name) %>: (id) => store.dispatch(<%= classify(name) %>ApiActions.<%= camelize(name) %>Deleted({id})),
+        update<%= classify(name) %>: (<%= camelize(name) %>) => store.dispatch(<%= classify(name) %>ApiActions.<%= camelize(name) %>Updated({<%= camelize(name) %>})),
+        <%= camelize(name) %>s$: store.select(select<%= classify(name) %>Collection),
+        isLoading$: store.select(selectIsLoading),
+        isInitialized$: store.select(selectIsInitialized),
         // describe feature here
     };
 };
