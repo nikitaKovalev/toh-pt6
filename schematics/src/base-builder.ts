@@ -1,10 +1,10 @@
 import {
     apply,
+    applyTemplates,
     chain,
     mergeWith,
     move,
     Rule,
-    template,
     url,
 } from '@angular-devkit/schematics';
 import {normalize, strings} from '@angular-devkit/core';
@@ -25,7 +25,7 @@ export const baseBuilder = (
 
         const subFolder = createSubFolder ? `${strings.dasherize(name)}/` : '';
         const templateSource = apply(url('./files'), [
-            template({...strings, path, name}),
+            applyTemplates({...strings, name}),
             move(normalize(`${path}/${subFolder}`)),
         ]);
 
