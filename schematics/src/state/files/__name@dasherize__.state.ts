@@ -10,7 +10,7 @@ import {
     props, provideState,
     Store,
 } from '@ngrx/store';
-import { exhaustMap, Observable, of } from 'rxjs';
+import { exhaustMap, mergeMap, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 export interface <%= classify(name) %>State {
@@ -52,8 +52,8 @@ export const <%= classify(name) %>ApiActions = createActionGroup({
     source: '<%= classify(name) %> API',
     events: {
         enter: emptyProps(),
-        '<%= classify(name) %> Loaded Success': props<{<%= camelize(name) %>List: unknown[]}>(),
-        '<%= classify(name) %> Loaded Failure': props<{error: string}>(),
+        '<%= classify(name) %> List Loaded Success': props<{<%= camelize(name) %>List: unknown[]}>(),
+        '<%= classify(name) %> List Loaded Failure': props<{error: string}>(),
         '<%= classify(name) %> Added': props<{<%= camelize(name) %>: unknown}>(),
         '<%= classify(name) %> Added Success': props<{<%= camelize(name) %>: unknown}>(),
         '<%= classify(name) %> Added Failure': props<{error: string}>(),
@@ -79,14 +79,14 @@ export const <%= camelize(name) %>Feature = createFeature({
             isLoading: true,
         })),
         // On load success
-        on(<%= classify(name) %>ApiActions.<%= camelize(name) %>LoadedSuccess, (state, {<%= camelize(name) %>List}) => ({
+        on(<%= classify(name) %>ApiActions.<%= camelize(name) %>ListLoadedSuccess, (state, {<%= camelize(name) %>List}) => ({
             ...state,
             collection: <%= camelize(name) %>List,
             isLoading: false,
             isInitialized: true,
         })),
         // On load failure
-        on(<%= classify(name) %>ApiActions.<%= camelize(name) %>LoadedFailure, (state, {error}) => ({
+        on(<%= classify(name) %>ApiActions.<%= camelize(name) %>ListLoadedFailure, (state, {error}) => ({
             ...state,
             isLoading: false,
         })),
@@ -114,16 +114,19 @@ export const {
 // Fetch list of <%= classify(name) %>s
 export const load<%= classify(name) %>$ = createEffect(
     (actions$ = inject(Actions)) => {
+        // replace with real service
+        const service = of([]);
+
         return actions$.pipe(
             ofType(<%= classify(name) %>ApiActions.enter),
             exhaustMap(() =>
-                of([]).pipe(
+                service.pipe(
                     map(<%= camelize(name) %>List =>
-                        <%= classify(name) %>ApiActions.<%= camelize(name) %>LoadedSuccess({<%= camelize(name) %>List})
+                        <%= classify(name) %>ApiActions.<%= camelize(name) %>ListLoadedSuccess({<%= camelize(name) %>List})
                     ),
                     catchError(() =>
                             of(
-                                <%= classify(name) %>ApiActions.<%= camelize(name) %>LoadedFailure({
+                                <%= classify(name) %>ApiActions.<%= camelize(name) %>ListLoadedFailure({
                                     error: 'An error occurred while loading <%= classify(name) %>List'
                                 })
                             ),
@@ -139,7 +142,24 @@ export const load<%= classify(name) %>$ = createEffect(
 // Add <%= classify(name) %>
 export const add<%= classify(name) %>$ = createEffect(
     (actions$ = inject(Actions)) => {
+        const service = of({});
+
         return actions$.pipe(
+            ofType(<%= classify(name) %>ApiActions.<%= camelize(name) %>Added),
+            mergeMap(({<%= camelize(name) %>}) =>
+                    service.pipe(
+                        map(<%= camelize(name) %> =>
+                            <%= classify(name) %>ApiActions.<%= camelize(name) %>AddedSuccess({<%= camelize(name) %>})
+                        ),
+                        catchError(() =>
+                                of(
+                                    <%= classify(name) %>ApiActions.<%= camelize(name) %>AddedFailure({
+                                        error: 'An error occurred while adding <%= classify(name) %>'
+                                    }),
+                                ),
+                        ),
+                    ),
+            ),
             // describe create effect here
         );
     },
