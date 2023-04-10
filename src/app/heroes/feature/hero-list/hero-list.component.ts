@@ -14,7 +14,7 @@ import {Hero} from '../../data-access/model/hero';
     imports: HERO_LIST_IMPORTS,
 })
 export default class HeroListComponent {
-    private readonly vm = injectHeroesFeature();
+    readonly vm = injectHeroesFeature();
 
     readonly heroes$ = this.vm.instantiated$.pipe(
         // Check if heroes store is already instantiated, if not, load heroes

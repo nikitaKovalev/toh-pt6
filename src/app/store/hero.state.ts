@@ -59,6 +59,7 @@ export const HeroesActions = createActionGroup({
     events: {
         enter: emptyProps(),
         'Hero Selected': props<{id: number}>(),
+        'Hero Loading State': props<{isLoading: boolean}>(),
         'Hero Action Disabled': props<{isActionDisabled: boolean}>(),
     },
 });
@@ -92,11 +93,6 @@ export const heroesFeature = createFeature({
     name: 'heroes',
     reducer: createReducer(
         initialState,
-        // Initial state
-        on(HeroesActions.enter, state => ({
-            ...state,
-            isLoading: true,
-        })),
         // On successful add hero request
         on(HeroesApiActions.heroAddedSuccess, (state, {hero}) => ({
             ...state,
@@ -107,10 +103,7 @@ export const heroesFeature = createFeature({
         on(HeroesApiActions.heroLoadedSuccess, (state, {hero}) => ({
             ...state,
             item: hero,
-            isLoading: false,
         })),
-        // On failure load hero request
-        on(HeroesApiActions.heroLoadedFailure, state => ({...state, isLoading: false})),
         // On successful delete hero request
         on(HeroesApiActions.heroDeletedSuccess, (state, {hero}) => {
             const collection = state.collection.filter(h => h.id !== hero.id);
@@ -121,29 +114,21 @@ export const heroesFeature = createFeature({
         on(HeroesApiActions.heroUpdatedSuccess, (state, {hero}) => ({
             ...state,
             item: hero,
-            isLoading: false,
         })),
-        // On failure update hero request
-        on(HeroesApiActions.heroUpdatedFailure, state => ({...state, isLoading: false})),
         // On successful load hero list
         on(HeroesApiActions.heroesLoadedSuccess, (state, {heroes}) => ({
             ...state,
             collection: heroes,
-            instantiated: true,
-            isLoading: false,
         })),
-        // On failure load hero list
-        on(HeroesApiActions.heroesLoadedFailure, state => ({...state, isLoading: false})),
-        // On hero search triggered
-        on(HeroesApiActions.heroesSearch, state => ({...state, isLoading: true})),
         // On successful hero search
         on(HeroesApiActions.heroesSearchSuccess, (state, {heroes}) => ({
             ...state,
             collectionSearchable: heroes,
-            isLoading: false,
         })),
-        // On failed hero search
-        on(HeroesApiActions.heroesSearchFailure, state => ({...state, isLoading: false})),
+        on(HeroesActions.heroLoadingState, (state, {isLoading}) => ({
+            ...state,
+            isLoading,
+        })),
         on(HeroesActions.heroActionDisabled, (state, {isActionDisabled}) => ({
             ...state,
             isActionDisabled,
@@ -297,9 +282,7 @@ export const deleteHero$ = createEffect(
             ),
         );
     },
-    {
-        functional: true,
-    },
+    {functional: true},
 );
 
 export const searchHeroes$ = createEffect(
@@ -355,6 +338,42 @@ export const heroActionState$ = createEffect(
     {functional: true},
 );
 
+export const heroLoadingState$ = createEffect(
+    (actions$ = inject(Actions)) => {
+        return merge(
+            actions$.pipe(
+                ofType(
+                    HeroesActions.enter,
+                    HeroesApiActions.heroLoaded,
+                    HeroesApiActions.heroesSearch,
+                    HeroesApiActions.heroUpdated,
+                    HeroesApiActions.heroDeleted,
+                    HeroesApiActions.heroAdded,
+                ),
+                mapTo(true),
+            ),
+            actions$.pipe(
+                ofType(
+                    HeroesApiActions.heroesLoadedSuccess,
+                    HeroesApiActions.heroesLoadedFailure,
+                    HeroesApiActions.heroLoadedSuccess,
+                    HeroesApiActions.heroLoadedFailure,
+                    HeroesApiActions.heroesSearchSuccess,
+                    HeroesApiActions.heroesSearchFailure,
+                    HeroesApiActions.heroUpdatedSuccess,
+                    HeroesApiActions.heroUpdatedFailure,
+                    HeroesApiActions.heroDeletedSuccess,
+                    HeroesApiActions.heroDeletedFailure,
+                    HeroesApiActions.heroAddedSuccess,
+                    HeroesApiActions.heroAddedFailure,
+                ),
+                mapTo(false),
+            ),
+        ).pipe(map(isLoading => HeroesActions.heroLoadingState({isLoading})));
+    },
+    {functional: true},
+);
+
 // Environment Providers, to register HeroesState in the store
 export const provideHeroesFeature = (): EnvironmentProviders =>
     makeEnvironmentProviders([
@@ -367,6 +386,7 @@ export const provideHeroesFeature = (): EnvironmentProviders =>
             deleteHero$,
             searchHeroes$,
             heroActionState$,
+            heroLoadingState$,
         }),
     ]);
 

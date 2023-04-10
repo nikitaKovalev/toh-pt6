@@ -38,7 +38,7 @@ export interface <%= classify(name) %>Feature {
     load<%= classify(name) %>: (id: number | string) => void;
     delete<%= classify(name) %>: (id: number | string) => void;
     update<%= classify(name) %>: (<%= camelize(name) %>: unknown) => void;
-    <%= camelize(name) %>s$: Observable<unknown[]>;
+    <%= camelize(name) %>List$: Observable<unknown[]>;
     <%= camelize(name) %>$: Observable<unknown>;
     isLoading$: Observable<boolean>;
     isInitialized$: Observable<boolean>;
@@ -106,6 +106,16 @@ export const <%= camelize(name) %>Feature = createFeature({
             ...state,
             collection: [...state.collection, <%= camelize(name) %>],
         })),
+        // On disable action state
+        on(<%= classify(name) %>Actions.<%= camelize(name) %>ActionDisabled, (state, {isActionDisabled}) => ({
+            ...state,
+            isActionDisabled,
+        })),
+        // on loading state
+        on(<%= classify(name) %>Actions.<%= camelize(name) %>LoadState, (state, {isLoading}) => ({
+            ...state,
+            isLoading,
+        })),
         // describe reducers here
     ),
     extraSelectors: (state) => ({
@@ -124,7 +134,7 @@ export const {
 } = <%= camelize(name) %>Feature;
 
 /** Effects */
-// Fetch list of <%= classify(name) %>s
+// Fetch list of <%= classify(name) %> List
 export const load<%= classify(name) %>List$ = createEffect(
     (actions$ = inject(Actions)) => {
         // replace with real service
@@ -329,7 +339,7 @@ export const inject<%= classify(name) %>Feature = (): <%= classify(name) %>Featu
         add<%= classify(name) %>: (<%= camelize(name) %>) => store.dispatch(<%= classify(name) %>ApiActions.<%= camelize(name) %>Added({<%= camelize(name) %>})),
         delete<%= classify(name) %>: (id) => store.dispatch(<%= classify(name) %>ApiActions.<%= camelize(name) %>Deleted({id})),
         update<%= classify(name) %>: (<%= camelize(name) %>) => store.dispatch(<%= classify(name) %>ApiActions.<%= camelize(name) %>Updated({<%= camelize(name) %>})),
-        <%= camelize(name) %>s$: store.select(select<%= classify(name) %>Collection),
+        <%= camelize(name) %>List$: store.select(select<%= classify(name) %>Collection),
         <%= camelize(name) %>$: store.select(select<%= classify(name) %>),
         isLoading$: store.select(selectIsLoading),
         isInitialized$: store.select(selectIsInitialized),

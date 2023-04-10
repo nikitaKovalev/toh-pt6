@@ -17,15 +17,14 @@ import {Hero} from '../../data-access/model/hero';
 })
 export default class HeroDetailComponent {
     private readonly location = inject(Location);
-    private readonly vm = injectHeroesFeature();
+
+    readonly vm = injectHeroesFeature();
 
     readonly hero$ = routeParam(RouteParam.Id).pipe(
         filter(Boolean),
         tap((id: string) => this.vm.loadHero(Number(id))),
         switchMap(() => this.vm.hero$),
     );
-
-    readonly disabledSave$ = this.vm.isActionDisabled$;
 
     goBack(): void {
         this.location.back();

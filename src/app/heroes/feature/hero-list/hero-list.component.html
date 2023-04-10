@@ -10,6 +10,7 @@
     <button
         type="button"
         class="add-button"
+        [disabled]="vm.isActionDisabled$ | async"
         (click)="add(heroName.value); heroName.value = ''"
     >
         Add hero
