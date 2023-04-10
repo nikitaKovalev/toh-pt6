@@ -16,9 +16,10 @@
     <div>
         <label for="hero-name">Hero name:</label>
         <input
+            #name
             id="hero-name"
             placeholder="Hero name"
-            [(ngModel)]="hero.name"
+            [ngModel]="hero.name"
         />
     </div>
 
@@ -31,11 +32,8 @@
     <button
         type="button"
         [disabled]="disabledSave$ | async"
-        (click)="save(hero)"
+        (click)="save({name: name.value, id: hero.id})"
     >
         save
     </button>
-
-    <!-- Don't repeat, it's just an example -->
-    <ng-container *ngIf="saveHero$ | async"></ng-container>
 </div>

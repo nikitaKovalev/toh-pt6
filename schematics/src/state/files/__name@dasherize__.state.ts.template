@@ -10,14 +10,15 @@ import {
     props, provideState,
     Store,
 } from '@ngrx/store';
-import { exhaustMap, mergeMap, Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import {exhaustMap, mergeMap, merge, Observable, of} from 'rxjs';
+import {catchError, map, mapTo} from 'rxjs/operators';
 
 export interface <%= classify(name) %>State {
     collection: unknown[];
     item: unknown | null;
     isLoading: boolean;
     isInitialized: boolean;
+    isActionDisabled: boolean;
     // describe state here
 }
 
@@ -27,18 +28,21 @@ export const <%= camelize(name) %>InitialState: <%= classify(name) %>State = {
     item: null,
     isLoading: false,
     isInitialized: false,
+    isActionDisabled: false,
     // describe initial state here
 };
 
 export interface <%= classify(name) %>Feature {
     enter: () => void;
     add<%= classify(name) %>: (<%= camelize(name) %>: unknown) => void;
+    load<%= classify(name) %>: (id: number | string) => void;
     delete<%= classify(name) %>: (id: number | string) => void;
     update<%= classify(name) %>: (<%= camelize(name) %>: unknown) => void;
     <%= camelize(name) %>s$: Observable<unknown[]>;
     <%= camelize(name) %>$: Observable<unknown>;
     isLoading$: Observable<boolean>;
     isInitialized$: Observable<boolean>;
+    isActionDisabled$: Observable<boolean>;
     // describe feature here
 }
 
@@ -46,6 +50,9 @@ export interface <%= classify(name) %>Feature {
 export const <%= classify(name) %>Actions = createActionGroup({
     source: '<%= classify(name) %>',
     events: {
+        enter: emptyProps(),
+        '<%= classify(name) %> Action Disabled': props<{isActionDisabled: boolean}>(),
+        '<%= classify(name) %> Load State': props<{isLoading: boolean}>(),
         // describe sync actions here
     },
 });
@@ -82,35 +89,17 @@ export const <%= camelize(name) %>Feature = createFeature({
         on(<%= classify(name) %>ApiActions.enter, state => ({
             ...state,
             collection: [],
-            isLoading: true,
         })),
         // On load success
         on(<%= classify(name) %>ApiActions.<%= camelize(name) %>ListLoadedSuccess, (state, {<%= camelize(name) %>List}) => ({
             ...state,
             collection: <%= camelize(name) %>List,
-            isLoading: false,
             isInitialized: true,
-        })),
-        // On load failure
-        on(<%= classify(name) %>ApiActions.<%= camelize(name) %>ListLoadedFailure, (state, {error}) => ({
-            ...state,
-            isLoading: false,
-        })),
-        // On load
-        on(<%= classify(name) %>ApiActions.<%= camelize(name) %>Loaded, state => ({
-            ...state,
-            isLoading: true,
         })),
         // On load success
         on(<%= classify(name) %>ApiActions.<%= camelize(name) %>LoadedSuccess, (state, {<%= camelize(name) %>}) => ({
             ...state,
             item: <%= camelize(name) %>,
-            isLoading: false,
-        })),
-        // On load failure
-        on(<%= classify(name) %>ApiActions.<%= camelize(name) %>LoadedFailure, (state, {error}) => ({
-            ...state,
-            isLoading: false,
         })),
         // On add success
         on(<%= classify(name) %>ApiActions.<%= camelize(name) %>AddedSuccess, (state, {<%= camelize(name) %>}) => ({
@@ -130,6 +119,7 @@ export const {
     selectItem: select<%= classify(name) %>,
     selectIsLoading,
     selectIsInitialized,
+    selectIsActionDisabled,
     // describe selectors here
 } = <%= camelize(name) %>Feature;
 
@@ -246,6 +236,74 @@ export const search<%= classify(name) %>$ = createEffect(
     {functional: true},
 );
 
+export const disable<%= classify(name) %>ActionState$ = createEffect(
+    (actions$ = inject(Actions)) => {
+        return merge(
+            actions$.pipe(
+                ofType(
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>Added,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>Updated,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>Deleted,
+                ),
+                mapTo(true),
+            ),
+            actions$.pipe(
+                ofType(
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>AddedSuccess,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>AddedFailure,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>UpdatedSuccess,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>UpdatedFailure,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>DeletedSuccess,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>DeletedFailure,
+                ),
+                mapTo(false),
+            ),
+        ).pipe(
+            map((isActionDisabled) =>
+                <%= classify(name) %>Actions.<%= camelize(name) %>ActionDisabled({isActionDisabled})
+            ),
+        );
+    },
+    {functional: true},
+);
+
+export const loading<%= classify(name) %>State$ = createEffect(
+    (actions$ = inject(Actions)) => {
+        return merge(
+            actions$.pipe(
+                ofType(
+                    <%= classify(name) %>Actions.enter,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>Loaded,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>Added,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>Updated,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>Deleted,
+                ),
+                mapTo(true),
+            ),
+            actions$.pipe(
+                ofType(
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>ListLoadedSuccess,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>ListLoadedFailure,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>LoadedSuccess,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>LoadedFailure,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>AddedSuccess,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>AddedFailure,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>UpdatedSuccess,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>UpdatedFailure,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>DeletedSuccess,
+                    <%= classify(name) %>ApiActions.<%= camelize(name) %>DeletedFailure,
+                ),
+                mapTo(false),
+            ),
+        ).pipe(
+            map(() =>
+                <%= classify(name) %>Actions.<%= camelize(name) %>LoadState({ isLoading: true })
+            ),
+        );
+    },
+    {functional: true},
+);
+
 /** Environment Providers, to register current state in the store */
 export const provide<%= classify(name) %>Feature = (): EnvironmentProviders =>
     makeEnvironmentProviders([
@@ -257,6 +315,8 @@ export const provide<%= classify(name) %>Feature = (): EnvironmentProviders =>
             update<%= classify(name) %>$,
             delete<%= classify(name) %>$,
             search<%= classify(name) %>$,
+            disable<%= classify(name) %>ActionState$,
+            loading<%= classify(name) %>State$,
         }),
     ]);
 
@@ -265,6 +325,7 @@ export const inject<%= classify(name) %>Feature = (): <%= classify(name) %>Featu
 
     return {
         enter: () => store.dispatch(<%= classify(name) %>ApiActions.enter()),
+        load<%= classify(name) %>: (id: string | number) => store.dispatch(<%= classify(name) %>ApiActions.<%= camelize(name) %>Loaded({id})),
         add<%= classify(name) %>: (<%= camelize(name) %>) => store.dispatch(<%= classify(name) %>ApiActions.<%= camelize(name) %>Added({<%= camelize(name) %>})),
         delete<%= classify(name) %>: (id) => store.dispatch(<%= classify(name) %>ApiActions.<%= camelize(name) %>Deleted({id})),
         update<%= classify(name) %>: (<%= camelize(name) %>) => store.dispatch(<%= classify(name) %>ApiActions.<%= camelize(name) %>Updated({<%= camelize(name) %>})),
@@ -272,6 +333,7 @@ export const inject<%= classify(name) %>Feature = (): <%= classify(name) %>Featu
         <%= camelize(name) %>$: store.select(select<%= classify(name) %>),
         isLoading$: store.select(selectIsLoading),
         isInitialized$: store.select(selectIsInitialized),
+        isActionDisabled$: store.select(selectIsActionDisabled),
         // describe feature here
     };
 };

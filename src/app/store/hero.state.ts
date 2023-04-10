@@ -13,36 +13,44 @@ import {
     provideState,
     Store,
 } from '@ngrx/store';
-import {concatMap, exhaustMap, mergeMap, Observable, of, switchMap} from 'rxjs';
-import {catchError, map} from 'rxjs/operators';
+import {concatMap, exhaustMap, merge, mergeMap, Observable, of, switchMap} from 'rxjs';
+import {catchError, map, mapTo} from 'rxjs/operators';
 
 export interface HeroState {
     collection: Hero[];
     collectionSearchable: Hero[];
+    item: Hero | null;
     isLoading: boolean;
     currentHeroId: number | null;
     instantiated: boolean;
+    isActionDisabled: boolean;
 }
 
 // Initial State
 export const initialState: HeroState = {
     collection: [],
     collectionSearchable: [],
-    isLoading: false,
+    item: null,
     currentHeroId: null,
+    isLoading: false,
     instantiated: false,
+    isActionDisabled: false,
 };
 
 export interface HeroesFeature {
     enter: () => void;
+    loadHero: (id: number) => void;
     addHero: (hero: Hero) => void;
+    updateHero: (hero: Hero) => void;
     deleteHero: (id: number) => void;
     searchHeroes: (term: string) => void;
     heroes$: Observable<Hero[]>;
     heroesSearchable$: Observable<Hero[]>;
+    hero$: Observable<Hero | null>;
     currentHero$: Observable<Hero | undefined>;
     isLoading$: Observable<boolean>;
     instantiated$: Observable<boolean>;
+    isActionDisabled$: Observable<boolean>;
 }
 
 // Sync Actions
@@ -51,6 +59,7 @@ export const HeroesActions = createActionGroup({
     events: {
         enter: emptyProps(),
         'Hero Selected': props<{id: number}>(),
+        'Hero Action Disabled': props<{isActionDisabled: boolean}>(),
     },
 });
 
@@ -60,12 +69,18 @@ export const HeroesApiActions = createActionGroup({
     events: {
         'Heroes Loaded Success': props<{heroes: Hero[]}>(),
         'Heroes Loaded Failure': props<{error: string}>(),
+        'Hero Loaded': props<{id: number}>(),
+        'Hero Loaded Success': props<{hero: Hero}>(),
+        'Hero Loaded Failure': props<{error: string}>(),
         'Heroes Search': props<{term: string}>(),
         'Heroes Search Success': props<{heroes: Hero[]}>(),
         'Heroes Search Failure': props<{error: string}>(),
         'Hero Added': props<{hero: Hero}>(),
         'Hero Added Success': props<{hero: Hero}>(),
         'Hero Added Failure': props<{error: string}>(),
+        'Hero Updated': props<{hero: Hero}>(),
+        'Hero Updated Success': props<{hero: Hero}>(),
+        'Hero Updated Failure': props<{error: string}>(),
         'Hero Deleted': props<{id: number}>(),
         'Hero Deleted Success': props<{hero: Hero}>(),
         'Hero Deleted Failure': props<{error: string}>(),
@@ -88,12 +103,28 @@ export const heroesFeature = createFeature({
             collection: [...state.collection, hero],
             collectionSearchable: [...state.collectionSearchable, hero],
         })),
+        // On successful load hero request
+        on(HeroesApiActions.heroLoadedSuccess, (state, {hero}) => ({
+            ...state,
+            item: hero,
+            isLoading: false,
+        })),
+        // On failure load hero request
+        on(HeroesApiActions.heroLoadedFailure, state => ({...state, isLoading: false})),
         // On successful delete hero request
         on(HeroesApiActions.heroDeletedSuccess, (state, {hero}) => {
             const collection = state.collection.filter(h => h.id !== hero.id);
 
             return {...state, collection, collectionSearchable: collection};
         }),
+        // On successful update hero request
+        on(HeroesApiActions.heroUpdatedSuccess, (state, {hero}) => ({
+            ...state,
+            item: hero,
+            isLoading: false,
+        })),
+        // On failure update hero request
+        on(HeroesApiActions.heroUpdatedFailure, state => ({...state, isLoading: false})),
         // On successful load hero list
         on(HeroesApiActions.heroesLoadedSuccess, (state, {heroes}) => ({
             ...state,
@@ -113,6 +144,10 @@ export const heroesFeature = createFeature({
         })),
         // On failed hero search
         on(HeroesApiActions.heroesSearchFailure, state => ({...state, isLoading: false})),
+        on(HeroesActions.heroActionDisabled, (state, {isActionDisabled}) => ({
+            ...state,
+            isActionDisabled,
+        })),
     ),
     extraSelectors: ({selectCollection, selectCurrentHeroId}) => ({
         selectCurrentHero: createSelector(
@@ -131,7 +166,9 @@ export const {
     selectCurrentHeroId,
     selectCollection: selectAllHeroes,
     selectCollectionSearchable: selectAllHeroesSearchable,
+    selectItem: selectLoadedHero,
     selectIsLoading,
+    selectIsActionDisabled,
 } = heroesFeature;
 
 // Effects
@@ -149,6 +186,30 @@ export const loadHeroes$ = createEffect(
                         of(
                             HeroesApiActions.heroesLoadedFailure({
                                 error: 'Heroes fetch failed',
+                            }),
+                        ),
+                    ),
+                ),
+            ),
+        );
+    },
+    {functional: true},
+);
+
+// Fetch hero from the server when the HeroesActions.heroSelected action is dispatched
+export const loadHero$ = createEffect(
+    (actions$ = inject(Actions)) => {
+        const heroService = inject(HeroService);
+
+        return actions$.pipe(
+            ofType(HeroesApiActions.heroLoaded),
+            exhaustMap(action =>
+                heroService.getHero(action.id).pipe(
+                    map(hero => HeroesApiActions.heroLoadedSuccess({hero})),
+                    catchError(() =>
+                        of(
+                            HeroesApiActions.heroLoadedFailure({
+                                error: 'Hero fetch failed',
                             }),
                         ),
                     ),
@@ -182,6 +243,31 @@ export const addHero$ = createEffect(
         );
     },
 
+    {functional: true},
+);
+
+// Make request to update hero when HeroesActions.heroUpdated action is dispatched
+export const updateHero$ = createEffect(
+    (actions$ = inject(Actions)) => {
+        const heroService = inject(HeroService);
+
+        return actions$.pipe(
+            ofType(HeroesApiActions.heroUpdated),
+            // no need in order
+            mergeMap(action =>
+                heroService.updateHero(action.hero).pipe(
+                    map(() => HeroesApiActions.heroUpdatedSuccess({hero: action.hero})),
+                    catchError(() =>
+                        of(
+                            HeroesApiActions.heroUpdatedFailure({
+                                error: 'Hero update failed',
+                            }),
+                        ),
+                    ),
+                ),
+            ),
+        );
+    },
     {functional: true},
 );
 
@@ -239,11 +325,49 @@ export const searchHeroes$ = createEffect(
     {functional: true},
 );
 
+// Action state
+export const heroActionState$ = createEffect(
+    (actions$ = inject(Actions)) => {
+        return merge(
+            actions$.pipe(
+                ofType(
+                    HeroesApiActions.heroAdded,
+                    HeroesApiActions.heroUpdated,
+                    HeroesApiActions.heroDeleted,
+                ),
+                mapTo(true),
+            ),
+            actions$.pipe(
+                ofType(
+                    HeroesApiActions.heroAddedSuccess,
+                    HeroesApiActions.heroAddedFailure,
+                    HeroesApiActions.heroDeletedSuccess,
+                    HeroesApiActions.heroDeletedFailure,
+                    HeroesApiActions.heroUpdatedSuccess,
+                    HeroesApiActions.heroUpdatedFailure,
+                ),
+                mapTo(false),
+            ),
+        ).pipe(
+            map(isActionDisabled => HeroesActions.heroActionDisabled({isActionDisabled})),
+        );
+    },
+    {functional: true},
+);
+
 // Environment Providers, to register HeroesState in the store
 export const provideHeroesFeature = (): EnvironmentProviders =>
     makeEnvironmentProviders([
         provideState(heroesFeature),
-        provideEffects({loadHeroes$, addHero$, deleteHero$, searchHeroes$}),
+        provideEffects({
+            loadHeroes$,
+            loadHero$,
+            addHero$,
+            updateHero$,
+            deleteHero$,
+            searchHeroes$,
+            heroActionState$,
+        }),
     ]);
 
 export const injectHeroesFeature = (): HeroesFeature => {
@@ -251,14 +375,18 @@ export const injectHeroesFeature = (): HeroesFeature => {
 
     return {
         enter: () => store.dispatch(HeroesActions.enter()),
+        loadHero: (id: number) => store.dispatch(HeroesApiActions.heroLoaded({id})),
         addHero: (hero: Hero) => store.dispatch(HeroesApiActions.heroAdded({hero})),
+        updateHero: (hero: Hero) => store.dispatch(HeroesApiActions.heroUpdated({hero})),
         deleteHero: (id: number) => store.dispatch(HeroesApiActions.heroDeleted({id})),
         searchHeroes: (term: string) =>
             store.dispatch(HeroesApiActions.heroesSearch({term})),
         heroes$: store.select(selectAllHeroes),
         heroesSearchable$: store.select(selectAllHeroesSearchable),
+        hero$: store.select(selectLoadedHero),
         currentHero$: store.select(selectCurrentHero),
         isLoading$: store.select(selectIsLoading),
         instantiated$: store.select(selectInstantiated),
+        isActionDisabled$: store.select(selectIsActionDisabled),
     };
 };
