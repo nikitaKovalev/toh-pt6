@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/schema",
-    "$id": "page-component",
-    "title": "Page Component",
+    "$id": "nx-like-module",
+    "title": "Module",
     "type": "object",
     "properties": {
         "path": {
@@ -16,7 +16,7 @@
         "name": {
             "type": "string",
             "description": "The name of the page.",
-            "x-prompt": "What name would you like to use for the page?"
+            "x-prompt": "What name would you like to use for the module?"
         }
     },
     "required": ["name"]

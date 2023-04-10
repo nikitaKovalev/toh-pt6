@@ -14,10 +14,11 @@
             "schema": "./base/schema.json",
             "aliases": ["base"]
         },
-        "module": {
+        "nx-like-module": {
             "description": "Schematics for creating module with next structure: ui, feature -> [module-name]-shell, data-access",
             "factory": "./module/index#module",
-            "schema": "./module/schema.json"
+            "schema": "./module/schema.json",
+            "aliases": ["module"]
         },
         "state-ngrx": {
             "description": "Schematics for creating state",
