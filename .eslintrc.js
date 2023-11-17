@@ -41,5 +41,6 @@ module.exports = {
 
         // temporal
         '**/hero.service.ts',
+        'scripts/**',
     ],
 };

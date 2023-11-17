@@ -1,5 +1,5 @@
 import {version} from '../package.json';
-import {infoLog} from '../projects/cdk/schematics/utils/colored-log';
+import {infoLog} from './colored-log';
 import {getValueByFlag, hasFlag} from './shared/argv.utils';
 import {bumpVersion} from './shared/bump-version';
 import {checkChangelogBeforePush} from './shared/check-changelog-before-push';
