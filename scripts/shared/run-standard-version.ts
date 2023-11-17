@@ -1,9 +1,9 @@
 import {execute} from './execute';
-import {TuiReleaseMode} from './release-mode';
+import {ReleaseMode} from './release-mode';
 
 export function runStandardVersion(
     version: string,
-    mode: TuiReleaseMode,
+    mode: ReleaseMode,
     enabledDryRun: boolean,
 ): void {
     const dryRun = enabledDryRun ? `--dry-run` : ``;

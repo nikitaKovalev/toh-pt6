@@ -1,6 +1,4 @@
-import process from 'process';
-
-import {processLog} from '../../projects/cdk/schematics/utils/colored-log';
+import {processLog} from './colored-log';
 
 export function getValueByFlag<T extends string>(flag: string, fallback: T): T {
     const index = findIndexFlag(flag);

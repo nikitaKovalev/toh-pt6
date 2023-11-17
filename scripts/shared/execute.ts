@@ -1,6 +1,6 @@
 import {CommonExecOptions, execSync} from 'child_process';
 
-import {infoLog} from '../../projects/cdk/schematics/utils/colored-log';
+import {infoLog} from './colored-log';
 
 export function execute(shell: string, options?: Partial<CommonExecOptions>): string {
     infoLog(`ᐅ ${shell}`);
