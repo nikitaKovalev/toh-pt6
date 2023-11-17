@@ -1,6 +1,6 @@
-import {TuiReleaseMode} from './release-mode';
+import {ReleaseMode} from './release-mode';
 
-export function bumpVersion(version: string, mode: TuiReleaseMode): string {
+export function bumpVersion(version: string, mode: ReleaseMode): string {
     let [major, minor, patch, , rc = -1] = version
         .split(/[.-]/)
         .map(value => Number(value));

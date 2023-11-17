@@ -1,15 +1,15 @@
 import {version} from '../package.json';
-import {infoLog} from './colored-log';
+import {infoLog} from './shared/colored-log';
 import {getValueByFlag, hasFlag} from './shared/argv.utils';
 import {bumpVersion} from './shared/bump-version';
 import {checkChangelogBeforePush} from './shared/check-changelog-before-push';
 import {gitCommitAndPush} from './shared/git-commit-and-push';
 import {makeReleaseBranch} from './shared/make-release-branch';
-import {TuiReleaseMode} from './shared/release-mode';
+import {ReleaseMode} from './shared/release-mode';
 import {runStandardVersion} from './shared/run-standard-version';
 
 const ci = hasFlag(`--ci-mode`);
-const mode = getValueByFlag<TuiReleaseMode>(`--release-as`, `minor`);
+const mode = getValueByFlag<ReleaseMode>(`--release-as`, `minor`);
 const dryRun = getValueByFlag<'false' | 'true'>(`--dry-run`, `false`) === `true`;
 const newVersion = bumpVersion(version, mode);
 
