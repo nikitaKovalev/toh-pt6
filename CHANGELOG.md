@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/nikitaKovalev/toh-pt6/compare/v0.1.0...v0.2.0) (2023-11-17)
+
+### Features
+
+- release functionality
+  ([52304a9](https://github.com/nikitaKovalev/toh-pt6/commit/52304a94f13e904ce37b40d5befa7e1ca14965f0))
+
 ## [0.1.0](https://github.com/nikitaKovalev/toh-pt6/compare/v0.0.1...v0.1.0) (2023-11-17)
 
 ### Features
