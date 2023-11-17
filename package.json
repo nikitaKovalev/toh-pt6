@@ -17,9 +17,9 @@
         "prettier": "prettier '**/*.{svg,yml,js,ts,html,md,less,json}' --write",
         "*** Release ***": "",
         "release": "standard-version -a --no-verify",
-        "release:patch": "ts-node  --project tsconfig.tools.json ./scripts/release.ts --release-as patch",
-        "release:minor": "ts-node  --project tsconfig.tools.json ./scripts/release.ts --release-as minor",
-        "release:major": "ts-node  --project tsconfig.tools.json ./scripts/release.ts --release-as major"
+        "release:patch": "npm run exec ./scripts/release.ts --release-as patch",
+        "release:minor": "npm run exec ./scripts/release.ts --release-as minor",
+        "release:major": "npm run exec ./scripts/release.ts --release-as major"
     },
     "dependencies": {
         "@angular/animations": "^15.2.0-rc.0",
@@ -68,7 +68,7 @@
     },
     "standard-version": {
         "scripts": {
-            "postchangelog": "ts-node --project tsconfig.tools.json ./scripts/postchangelog.ts"
+            "postchangelog": "npm run exec ./scripts/postchangelog.ts"
         },
         "types": [
             {
